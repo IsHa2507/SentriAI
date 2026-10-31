@@ -8,6 +8,7 @@ import { MCPServersPage } from "./mcp-servers";
 import { LogsPage } from "./logs";
 import { AnalyticsPage } from "./analytics";
 import { SettingsPage } from "./settings";
+import { AboutPage } from "./about";
 
 const PAGE_TITLES: Record<string, { title: string; subtitle?: string }> = {
   "/":              { title: "Security Overview",       subtitle: "Live posture across all AI agents and MCP servers." },
@@ -18,6 +19,7 @@ const PAGE_TITLES: Record<string, { title: string; subtitle?: string }> = {
   "/logs":          { title: "Activity Logs",           subtitle: "Immutable security audit trail across all agents." },
   "/analytics":     { title: "Analytics",               subtitle: "Trends across agents, tools, policies, and token spend." },
   "/settings":      { title: "Settings",                subtitle: "Workspace configuration and security defaults." },
+  "/about":         { title: "About ArmorIQ",           subtitle: "What it is, how it works, and why we built it." },
 };
 
 function TitledLayout() {
@@ -39,6 +41,7 @@ export function RootRouter() {
           <Route path="/logs"          element={<LogsPage />} />
           <Route path="/analytics"     element={<AnalyticsPage />} />
           <Route path="/settings"      element={<SettingsPage />} />
+          <Route path="/about"         element={<AboutPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
