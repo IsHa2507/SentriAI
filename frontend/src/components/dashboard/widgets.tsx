@@ -25,19 +25,19 @@ export function KpiCard({
 }: { label: string; value: string | number; delta: string; Icon: LucideIcon; tone?: keyof typeof toneMap }) {
   const positive = delta.startsWith("+");
   return (
-    <GlassCard className="group relative overflow-hidden p-5 transition-all hover:border-primary/40 hover:-translate-y-0.5">
-      <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary/5 blur-2xl transition-opacity group-hover:opacity-100 opacity-50" />
+    <GlassCard className="group relative overflow-hidden p-5 transition-all duration-200 hover:border-primary/30 hover:-translate-y-1 hover:shadow-[0_8px_32px_-8px_oklch(0.72_0.20_195/25%)]">
+      <div className="absolute -right-6 -top-6 h-24 w-24 rounded-full bg-primary/4 blur-xl transition-opacity opacity-0 group-hover:opacity-100" />
       <div className="relative flex items-start justify-between">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
-          <p className="mt-2 text-3xl font-bold tracking-tight">{value}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+          <p className="mt-2 text-3xl font-bold tracking-tight tabular-nums">{value}</p>
           <div className={cn("mt-2 inline-flex items-center gap-1 text-xs font-medium", positive ? "text-success" : "text-destructive")}>
             {positive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
             {delta} vs last week
           </div>
         </div>
-        <div className={cn("flex h-10 w-10 items-center justify-center rounded-lg ring-1", toneMap[tone])}>
-          <Icon className="h-5 w-5" />
+        <div className={cn("flex h-9 w-9 items-center justify-center rounded-lg ring-1", toneMap[tone])}>
+          <Icon className="h-4.5 w-4.5" />
         </div>
       </div>
     </GlassCard>
