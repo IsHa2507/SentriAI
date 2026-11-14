@@ -31,7 +31,7 @@ export function DashboardLayout({
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="min-h-screen w-full" style={{ background: "var(--gradient-hero)" }}>
+    <div className="min-h-screen w-full bg-background">
       {/* ── Top nav ──────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-40 border-b border-border bg-white/80 backdrop-blur-xl animate-slide-down">
         <div className="mx-auto flex h-14 max-w-screen-xl items-center gap-4 px-4 md:px-6">
