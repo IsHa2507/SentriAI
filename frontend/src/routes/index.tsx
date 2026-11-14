@@ -3,14 +3,12 @@ import { GlassCard, KpiCard, SectionHeader } from "@/components/dashboard/widget
 import {
   dashboardAPI,
   type DashboardData,
-  type ToolUsagePoint,
-  type TopTool,
-  type SecurityEvent,
 } from "@/services/api";
 import {
   Bot, Server, Zap, ShieldAlert, Clock, Activity,
   ShieldCheck, AlertTriangle, RefreshCw, Shield,
   Lock, Database, Users, CheckCircle, ArrowRight, GitBranch,
+  Code2, Globe, Layers,
 } from "lucide-react";
 import {
   Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid,
@@ -34,7 +32,6 @@ function useInView(threshold = 0.12) {
   return { ref, visible };
 }
 
-// ── Reveal wrapper ────────────────────────────────────────────────────────────
 function Reveal({
   children, className, delay = 0, direction = "up",
 }: {
@@ -65,7 +62,6 @@ function Reveal({
   );
 }
 
-// ── animated counter ──────────────────────────────────────────────────────────
 function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
   const [val, setVal] = useState(0);
   const { ref, visible } = useInView(0.5);
@@ -84,10 +80,9 @@ function Counter({ to, suffix = "" }: { to: number; suffix?: string }) {
   return <span ref={ref} className="tabular-nums">{val.toLocaleString()}{suffix}</span>;
 }
 
-// ── skeleton ──────────────────────────────────────────────────────────────────
 function SkeletonKpi() {
   return (
-    <div className="rounded-2xl border border-border bg-white p-5 animate-pulse">
+    <div className="rounded-xl border border-border bg-white p-5 animate-pulse">
       <div className="h-2.5 w-24 rounded-full bg-muted/60 mb-3" />
       <div className="h-8 w-20 rounded-full bg-muted/50 mb-2" />
       <div className="h-2.5 w-16 rounded-full bg-muted/40" />
@@ -95,12 +90,13 @@ function SkeletonKpi() {
   );
 }
 
-// ── About content ─────────────────────────────────────────────────────────────
+// ── Static About Us content (from README) ─────────────────────────────────────
+
 const features = [
   {
     icon: Shield,
     title: "Policy Engine",
-    desc: "Every tool call passes through composable rules — BLOCK, ALLOW, or REQUIRE_APPROVAL — evaluated live, no restarts.",
+    desc: "BLOCK, ALLOW, or REQUIRE_APPROVAL — composable rules evaluated live on every tool call, no restarts needed.",
     color: "text-primary",
     bg: "bg-secondary",
   },
@@ -108,7 +104,7 @@ const features = [
     icon: Users,
     title: "Human-in-the-Loop",
     desc: "Gate any tool behind a real approval step. The agent pauses and waits for a human decision before continuing.",
-    color: "text-[oklch(0.55_0.18_340)]",
+    color: "text-[oklch(0.52_0.20_340)]",
     bg: "bg-[oklch(0.96_0.030_340)]",
   },
   {
@@ -134,12 +130,36 @@ const stats = [
   { label: "Uptime",              value: 99,    suffix: ".98%" },
 ];
 
-const stack = [
-  "React 19", "TypeScript 6", "Django 6", "PostgreSQL",
-  "MCP / JSON-RPC", "Tailwind CSS 4",
+const techStack = [
+  { layer: "Frontend",        tech: "React 19, TypeScript 6, Vite 8, Tailwind CSS 4, Recharts" },
+  { layer: "Backend",         tech: "Django 6, Django REST Framework, Python 3.14" },
+  { layer: "Agent Protocol",  tech: "MCP (Model Context Protocol) over JSON-RPC 2.0 / STDIO" },
+  { layer: "Database",        tech: "PostgreSQL (production), SQLite (local dev)" },
+  { layer: "AI / Auth",       tech: "OpenAI API, Google Gemini API" },
+  { layer: "Deployment",      tech: "Render (backend), Vercel (frontend)" },
 ];
 
-// ── page ──────────────────────────────────────────────────────────────────────
+const mcpServers = [
+  {
+    name: "notes-server",
+    tools: ["create_note", "get_note", "list_notes", "update_note", "delete_note"],
+    desc: "In-process CRUD note manager",
+  },
+  {
+    name: "filesystem-server",
+    tools: ["fs_read_file", "fs_write_file", "fs_list_directory", "fs_file_exists", "fs_delete_file"],
+    desc: "Sandboxed filesystem operations — path traversal blocked",
+  },
+];
+
+const checklist = [
+  "Policy rules evaluated on every single call",
+  "Human approvals pause the agent mid-run",
+  "Immutable PostgreSQL audit log",
+  "Composable rules — no code deploys needed",
+];
+
+// ── Page ──────────────────────────────────────────────────────────────────────
 export function IndexRoute() {
   const [data, setData]             = useState<DashboardData | null>(null);
   const [loading, setLoading]       = useState(true);
@@ -169,34 +189,36 @@ export function IndexRoute() {
   }, [load]);
 
   const kpiCards = data ? [
-    { label: "Active Sessions",   value: data.kpis.active_sessions.toLocaleString(),      delta: "+0",                          icon: Bot,        tone: "primary"  as const },
-    { label: "MCP Servers",       value: data.kpis.mcp_servers,                           delta: "+0",                          icon: Server,     tone: "success"  as const },
-    { label: "Tool Calls Today",  value: data.kpis.tool_calls_today.toLocaleString(),     delta: data.kpi_deltas.tool_calls_today, icon: Zap,      tone: "primary"  as const },
-    { label: "Blocked Actions",   value: data.kpis.blocked_today.toLocaleString(),        delta: data.kpi_deltas.blocked_today,  icon: ShieldAlert,tone: "danger"   as const },
-    { label: "Pending Approvals", value: data.kpis.pending_approvals.toLocaleString(),    delta: "+0",                          icon: Clock,      tone: "warning"  as const },
-    { label: "Uptime",            value: `${data.kpis.uptime_pct}%`,                      delta: "0%",                          icon: Activity,   tone: "success"  as const },
+    { label: "Active Sessions",   value: data.kpis.active_sessions.toLocaleString(),   delta: "+0",                           icon: Bot,        tone: "primary"  as const },
+    { label: "MCP Servers",       value: data.kpis.mcp_servers,                        delta: "+0",                           icon: Server,     tone: "success"  as const },
+    { label: "Tool Calls Today",  value: data.kpis.tool_calls_today.toLocaleString(),  delta: data.kpi_deltas.tool_calls_today, icon: Zap,       tone: "primary"  as const },
+    { label: "Blocked Actions",   value: data.kpis.blocked_today.toLocaleString(),     delta: data.kpi_deltas.blocked_today,  icon: ShieldAlert, tone: "danger"   as const },
+    { label: "Pending Approvals", value: data.kpis.pending_approvals.toLocaleString(), delta: "+0",                           icon: Clock,      tone: "warning"  as const },
+    { label: "Uptime",            value: `${data.kpis.uptime_pct}%`,                   delta: "0%",                           icon: Activity,   tone: "success"  as const },
   ] : [];
 
-  const series  = data?.tool_usage_series   ?? [];
-  const topTools= data?.top_tools           ?? [];
-  const events  = data?.security_events     ?? [];
-  const shield  = data?.threat_shield       ?? { score: 0, allowed: 0, blocked: 0, pending: 0 };
+  const series   = data?.tool_usage_series ?? [];
+  const topTools = data?.top_tools         ?? [];
+  const events   = data?.security_events   ?? [];
+  const shield   = data?.threat_shield     ?? { score: 0, allowed: 0, blocked: 0, pending: 0 };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-10">
 
-      {/* ── Dashboard section ─────────────────────────────────────────── */}
+      {/* ════════════════════════════════════════════════════════════════
+          DASHBOARD
+      ════════════════════════════════════════════════════════════════ */}
 
       {/* Status bar */}
       <div className="flex items-center justify-between animate-fade-in">
         <span className="text-xs text-muted-foreground">
-          {loading ? "Loading…" : error ? "Backend unreachable" : "Live · updates every 30s"}
+          {loading ? "Loading…" : error ? "Backend unreachable" : "Live · updates every 30 s"}
         </span>
         <button
           type="button"
           onClick={() => void load(true)}
           disabled={refreshing || loading}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:border-primary/40 hover:text-primary disabled:opacity-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-foreground shadow-sm transition-all hover:border-primary/50 hover:text-primary disabled:opacity-50"
         >
           <RefreshCw className={cn("h-3 w-3", refreshing && "animate-spin")} />
           Refresh
@@ -204,7 +226,7 @@ export function IndexRoute() {
       </div>
 
       {error && (
-        <div className="rounded-xl border border-destructive/30 bg-[oklch(0.97_0.02_22)] px-4 py-2.5 text-sm text-destructive animate-fade-in">
+        <div className="rounded-lg border border-destructive/30 bg-[oklch(0.97_0.02_22)] px-4 py-2.5 text-sm text-destructive animate-fade-in">
           {error}
         </div>
       )}
@@ -224,8 +246,12 @@ export function IndexRoute() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <GlassCard className="p-5 lg:col-span-2 animate-fade-in-up stagger-2">
           <SectionHeader
-            title="Tool Usage · last 24h"
-            action={<span className="text-xs text-muted-foreground">{loading ? "—" : `${data?.kpis.tool_calls_today.toLocaleString() ?? 0} calls`}</span>}
+            title="Tool Usage · last 24 h"
+            action={
+              <span className="text-xs text-muted-foreground">
+                {loading ? "—" : `${data?.kpis.tool_calls_today.toLocaleString() ?? 0} calls`}
+              </span>
+            }
           />
           <div className="h-64 -ml-2">
             {loading ? (
@@ -235,28 +261,28 @@ export function IndexRoute() {
                 <AreaChart data={series}>
                   <defs>
                     <linearGradient id="g-calls" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="oklch(0.58 0.16 275)" stopOpacity={0.3} />
-                      <stop offset="100%" stopColor="oklch(0.58 0.16 275)" stopOpacity={0} />
+                      <stop offset="0%" stopColor="oklch(0.52 0.20 264)" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="oklch(0.52 0.20 264)" stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="g-block" x1="0" x2="0" y1="0" y2="1">
-                      <stop offset="0%" stopColor="oklch(0.58 0.20 22)" stopOpacity={0.25} />
-                      <stop offset="100%" stopColor="oklch(0.58 0.20 22)" stopOpacity={0} />
+                      <stop offset="0%" stopColor="oklch(0.56 0.22 22)" stopOpacity={0.20} />
+                      <stop offset="100%" stopColor="oklch(0.56 0.22 22)" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.88 0.020 275)" />
-                  <XAxis dataKey="hour" stroke="oklch(0.65 0.025 270)" fontSize={11} />
-                  <YAxis stroke="oklch(0.65 0.025 270)" fontSize={11} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="oklch(0.90 0.004 264)" />
+                  <XAxis dataKey="hour" stroke="oklch(0.60 0.010 264)" fontSize={11} />
+                  <YAxis stroke="oklch(0.60 0.010 264)" fontSize={11} />
                   <Tooltip
                     contentStyle={{
                       background: "white",
-                      border: "1px solid oklch(0.88 0.020 275)",
-                      borderRadius: 12,
+                      border: "1px solid oklch(0.88 0.005 264)",
+                      borderRadius: 8,
                       fontSize: 12,
-                      boxShadow: "0 4px 16px -4px oklch(0.58 0.16 275 / 15%)",
+                      boxShadow: "0 2px 12px -2px oklch(0.52 0.20 264 / 12%)",
                     }}
                   />
-                  <Area type="monotone" dataKey="calls"   stroke="oklch(0.58 0.16 275)" strokeWidth={2} fill="url(#g-calls)" />
-                  <Area type="monotone" dataKey="blocked" stroke="oklch(0.58 0.20 22)"  strokeWidth={2} fill="url(#g-block)" />
+                  <Area type="monotone" dataKey="calls"   stroke="oklch(0.52 0.20 264)" strokeWidth={2} fill="url(#g-calls)" />
+                  <Area type="monotone" dataKey="blocked" stroke="oklch(0.56 0.22 22)"  strokeWidth={2} fill="url(#g-block)" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
@@ -288,7 +314,7 @@ export function IndexRoute() {
                   </div>
                   <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted/40">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-primary to-primary-glow transition-all"
+                      className="h-full rounded-full bg-primary transition-all"
                       style={{ width: `${(t.calls / (topTools[0]?.calls || 1)) * 100}%` }}
                     />
                   </div>
@@ -357,27 +383,27 @@ export function IndexRoute() {
           <SectionHeader title="Threat Shield" />
           <div className="flex flex-col items-center py-4">
             <div className="relative animate-float">
-              <div className="absolute inset-0 rounded-full bg-secondary blur-2xl opacity-60" />
+              <div className="absolute inset-0 rounded-full bg-secondary blur-2xl opacity-50" />
               <svg viewBox="0 0 200 200" className="relative h-40 w-40">
                 <defs>
                   <linearGradient id="shield-grad" x1="0" x2="0" y1="0" y2="1">
-                    <stop offset="0%" stopColor="oklch(0.65 0.18 290)" />
-                    <stop offset="100%" stopColor="oklch(0.58 0.16 275)" />
+                    <stop offset="0%" stopColor="oklch(0.60 0.22 280)" />
+                    <stop offset="100%" stopColor="oklch(0.52 0.20 264)" />
                   </linearGradient>
                 </defs>
-                <circle cx="100" cy="100" r="90" fill="none" stroke="oklch(0.88 0.020 275)" strokeWidth="1.5" strokeDasharray="5 7" />
+                <circle cx="100" cy="100" r="90" fill="none" stroke="oklch(0.88 0.005 264)" strokeWidth="1.5" strokeDasharray="5 7" />
                 <circle cx="100" cy="100" r="70" fill="none" stroke="url(#shield-grad)" strokeWidth="1.5" opacity="0.5" />
                 <path
                   d="M100 40 L150 60 L150 110 Q150 145 100 165 Q50 145 50 110 L50 60 Z"
                   fill="url(#shield-grad)"
-                  opacity="0.12"
+                  opacity="0.10"
                   stroke="url(#shield-grad)"
                   strokeWidth="1.5"
                 />
                 <path
                   d="M80 100 L95 115 L125 85"
                   fill="none"
-                  stroke="oklch(0.60 0.16 152)"
+                  stroke="oklch(0.56 0.18 152)"
                   strokeWidth="4"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -388,11 +414,11 @@ export function IndexRoute() {
             <p className="text-xs uppercase tracking-widest text-muted-foreground">Security Score</p>
             <div className="mt-4 grid w-full grid-cols-3 gap-2 text-center">
               {[
-                { label: "Allowed", value: loading ? "—" : shield.allowed.toLocaleString(),  cls: "text-success" },
-                { label: "Pending", value: loading ? "—" : shield.pending.toLocaleString(),  cls: "text-warning" },
-                { label: "Blocked", value: loading ? "—" : shield.blocked.toLocaleString(),  cls: "text-destructive" },
+                { label: "Allowed", value: loading ? "—" : shield.allowed.toLocaleString(), cls: "text-success" },
+                { label: "Pending", value: loading ? "—" : shield.pending.toLocaleString(), cls: "text-warning" },
+                { label: "Blocked", value: loading ? "—" : shield.blocked.toLocaleString(), cls: "text-destructive" },
               ].map((s) => (
-                <div key={s.label} className="rounded-xl border border-border bg-muted/20 py-2">
+                <div key={s.label} className="rounded-lg border border-border bg-muted/20 py-2">
                   <div className={cn("text-sm font-bold", s.cls)}>{s.value}</div>
                   <div className="text-[10px] text-muted-foreground">{s.label}</div>
                 </div>
@@ -402,8 +428,11 @@ export function IndexRoute() {
         </GlassCard>
       </div>
 
-      {/* ── Divider ───────────────────────────────────────────────────────── */}
-      <div className="relative py-6">
+
+      {/* ════════════════════════════════════════════════════════════════
+          ABOUT US DIVIDER
+      ════════════════════════════════════════════════════════════════ */}
+      <div className="relative py-4">
         <div className="absolute inset-0 flex items-center">
           <div className="w-full border-t border-border" />
         </div>
@@ -414,11 +443,14 @@ export function IndexRoute() {
         </div>
       </div>
 
-      {/* ── About Us section ──────────────────────────────────────────────── */}
 
-      {/* Hero tagline */}
+      {/* ════════════════════════════════════════════════════════════════
+          ABOUT US
+      ════════════════════════════════════════════════════════════════ */}
+
+      {/* Hero */}
       <Reveal direction="up">
-        <div className="rounded-2xl border border-border bg-white p-8 text-center shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/10%)] md:p-12">
+        <div className="rounded-xl border border-border bg-white p-8 text-center shadow-sm md:p-12">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-3 py-1 text-xs font-semibold text-primary">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
@@ -426,21 +458,21 @@ export function IndexRoute() {
             </span>
             AI Agent Security Platform
           </div>
-          <h2 className="mt-3 text-3xl font-bold tracking-tight md:text-4xl">
+          <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground md:text-4xl">
             Every tool call,{" "}
             <span className="gradient-text">governed.</span>
           </h2>
-          <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-            ArmorIQ sits between your AI agent and its tools. Every MCP tool call
-            passes through a policy engine before execution — enforced in real time,
-            logged immutably, surfaced in this dashboard.
+          <p className="mx-auto mt-4 max-w-2xl text-base text-muted-foreground leading-relaxed">
+            ArmorIQ sits between your AI agent and its tools. Every MCP tool call passes through a
+            <strong className="text-foreground"> PolicyEngine</strong> before execution — enforced in real time,
+            logged immutably, and surfaced here in this dashboard.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <a
               href="https://amor-beta-livid.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-glow px-5 py-2.5 text-sm font-semibold text-white shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/40%)] transition-all hover:-translate-y-0.5 hover:shadow-[0_4px_20px_-2px_oklch(0.58_0.16_275/50%)]"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
               Live Demo <ArrowRight className="h-4 w-4" />
             </a>
@@ -448,7 +480,7 @@ export function IndexRoute() {
               href="https://github.com/IsHa2507/SentriAI"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-white px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-5 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/50"
             >
               <GitBranch className="h-4 w-4 text-muted-foreground" />
               GitHub
@@ -457,11 +489,11 @@ export function IndexRoute() {
         </div>
       </Reveal>
 
-      {/* Stats counters */}
+      {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
         {stats.map((s, i) => (
           <Reveal key={s.label} direction="up" delay={i * 60}>
-            <div className="rounded-2xl border border-border bg-white p-6 text-center shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/10%)] transition-all hover:-translate-y-1 hover:shadow-[0_6px_24px_-4px_oklch(0.58_0.16_275/18%)]">
+            <div className="rounded-xl border border-border bg-white p-6 text-center shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
               <p className="text-3xl font-bold gradient-text md:text-4xl">
                 <Counter to={s.value} suffix={s.suffix} />
               </p>
@@ -471,49 +503,20 @@ export function IndexRoute() {
         ))}
       </div>
 
-      {/* Features grid */}
-      <Reveal direction="up">
-        <div className="mb-8 text-center">
-          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">Capabilities</p>
-          <h3 className="text-2xl font-bold tracking-tight">Built for real production use</h3>
-        </div>
-      </Reveal>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {features.map((f, i) => {
-          const Icon = f.icon;
-          return (
-            <Reveal key={f.title} direction="up" delay={i * 70}>
-              <div className="h-full rounded-2xl border border-border bg-white p-6 shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/10%)] transition-all hover:-translate-y-1 hover:border-[oklch(0.75_0.08_275)] hover:shadow-[0_6px_24px_-4px_oklch(0.58_0.16_275/18%)]">
-                <div className={cn("mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl", f.bg)}>
-                  <Icon className={cn("h-5 w-5", f.color)} />
-                </div>
-                <h4 className="mb-2 font-semibold text-foreground">{f.title}</h4>
-                <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
-              </div>
-            </Reveal>
-          );
-        })}
-      </div>
-
-      {/* What we built — split */}
+      {/* What is ArmorIQ — split */}
       <div className="grid gap-8 md:grid-cols-2 md:items-center">
         <Reveal direction="left">
           <div>
             <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">What we built</p>
-            <h3 className="text-2xl font-bold tracking-tight">A governance layer for AI agents</h3>
+            <h3 className="text-2xl font-bold tracking-tight text-foreground">A governance layer for AI agents</h3>
             <p className="mt-4 leading-relaxed text-muted-foreground">
-              Modern AI agents can read files, write databases, call APIs, and execute code —
-              often with zero oversight. ArmorIQ enforces a policy layer at the protocol level,
-              built on the <strong className="text-foreground">Model Context Protocol (MCP)</strong>.
+              Modern AI agents can read files, write databases, call APIs, and execute code — often with zero
+              oversight. ArmorIQ enforces a policy layer at the protocol level, built on the{" "}
+              <strong className="text-foreground">Model Context Protocol (MCP)</strong>.
             </p>
-            <ul className="mt-5 space-y-2">
-              {[
-                "Policy rules evaluated on every single call",
-                "Human approvals pause the agent mid-run",
-                "Immutable PostgreSQL audit log",
-                "Composable rules — no code deploys needed",
-              ].map((item) => (
-                <li key={item} className="flex items-center gap-2 text-sm text-foreground">
+            <ul className="mt-5 space-y-2.5">
+              {checklist.map((item) => (
+                <li key={item} className="flex items-center gap-2.5 text-sm text-foreground">
                   <CheckCircle className="h-4 w-4 shrink-0 text-primary" />
                   {item}
                 </li>
@@ -522,17 +525,18 @@ export function IndexRoute() {
           </div>
         </Reveal>
 
+        {/* Request flow diagram */}
         <Reveal direction="right" delay={100}>
-          <div className="rounded-2xl border border-border bg-white p-6 font-mono text-xs shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/10%)]">
-            <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Request flow</p>
+          <div className="rounded-xl border border-border bg-white p-6 font-mono text-xs shadow-sm">
+            <p className="mb-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Request flow</p>
             {[
-              { label: "User Prompt",           color: "text-foreground", bg: "bg-muted/30" },
-              { label: "LLM Agent",             color: "text-primary",    bg: "bg-secondary" },
-              { label: "PolicyEngine",          color: "text-warning",    bg: "bg-[oklch(0.96_0.04_78)]" },
+              { label: "User Prompt",            color: "text-foreground",    bg: "bg-muted/30" },
+              { label: "LLM Agent",              color: "text-primary",       bg: "bg-secondary" },
+              { label: "PolicyEngine",           color: "text-warning",       bg: "bg-[oklch(0.96_0.04_78)]" },
               null,
-              { label: "✅  ALLOW → execute",   color: "text-success",     bg: "bg-[oklch(0.94_0.04_152)]" },
-              { label: "🚫  BLOCK → log error", color: "text-destructive", bg: "bg-[oklch(0.96_0.04_22)]" },
-              { label: "⏳  HOLD → human reviews",color: "text-warning",   bg: "bg-[oklch(0.96_0.04_78)]" },
+              { label: "✅  ALLOW → execute",    color: "text-success",       bg: "bg-[oklch(0.94_0.04_152)]" },
+              { label: "🚫  BLOCK → log error",  color: "text-destructive",   bg: "bg-[oklch(0.96_0.04_22)]" },
+              { label: "⏳  HOLD → human reviews", color: "text-warning",     bg: "bg-[oklch(0.96_0.04_78)]" },
             ].map((item, i) =>
               item === null ? (
                 <div key={i} className="my-2 flex items-center gap-1.5 text-muted-foreground/50">
@@ -542,7 +546,7 @@ export function IndexRoute() {
                 </div>
               ) : (
                 <div key={i} className="flex flex-col items-center">
-                  <div className={cn("w-full rounded-xl border border-border px-3 py-2", item.bg)}>
+                  <div className={cn("w-full rounded-lg border border-border px-3 py-2", item.bg)}>
                     <span className={cn("font-semibold", item.color)}>{item.label}</span>
                   </div>
                   {i < 3 && <div className="h-4 w-px bg-border" />}
@@ -553,54 +557,166 @@ export function IndexRoute() {
         </Reveal>
       </div>
 
-      {/* Tech stack pills */}
+      {/* Features grid */}
       <Reveal direction="up">
-        <div className="rounded-2xl border border-border bg-white p-8 shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/10%)]">
-          <p className="mb-5 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">Tech stack</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            {stack.map((s) => (
-              <span key={s} className="rounded-xl border border-border bg-secondary px-3 py-1.5 text-sm font-medium text-primary">
-                {s}
-              </span>
+        <div className="mb-6 text-center">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">Capabilities</p>
+          <h3 className="text-2xl font-bold tracking-tight text-foreground">Built for real production use</h3>
+        </div>
+      </Reveal>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {features.map((f, i) => {
+          const Icon = f.icon;
+          return (
+            <Reveal key={f.title} direction="up" delay={i * 70}>
+              <div className="h-full rounded-xl border border-border bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:border-primary/40 hover:shadow-md">
+                <div className={cn("mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg", f.bg)}>
+                  <Icon className={cn("h-5 w-5", f.color)} />
+                </div>
+                <h4 className="mb-2 font-semibold text-foreground">{f.title}</h4>
+                <p className="text-sm leading-relaxed text-muted-foreground">{f.desc}</p>
+              </div>
+            </Reveal>
+          );
+        })}
+      </div>
+
+      {/* MCP Servers */}
+      <Reveal direction="up">
+        <div className="mb-4 text-center">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-primary">MCP Servers</p>
+          <h3 className="text-2xl font-bold tracking-tight text-foreground">2 built-in servers</h3>
+        </div>
+      </Reveal>
+      <div className="grid gap-4 md:grid-cols-2">
+        {mcpServers.map((srv, i) => (
+          <Reveal key={srv.name} direction="up" delay={i * 80}>
+            <div className="rounded-xl border border-border bg-white p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-md">
+              <div className="mb-3 flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary">
+                  <Server className="h-4 w-4 text-primary" />
+                </div>
+                <span className="font-mono text-sm font-semibold text-foreground">{srv.name}</span>
+              </div>
+              <p className="mb-3 text-sm text-muted-foreground">{srv.desc}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {srv.tools.map((t) => (
+                  <span key={t} className="rounded-md border border-border bg-muted/40 px-2 py-0.5 font-mono text-[11px] text-foreground">
+                    {t}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        ))}
+      </div>
+
+      {/* Tech stack */}
+      <Reveal direction="up">
+        <div className="rounded-xl border border-border bg-white shadow-sm overflow-hidden">
+          <div className="border-b border-border px-6 py-4">
+            <div className="flex items-center gap-2">
+              <Layers className="h-4 w-4 text-primary" />
+              <h4 className="font-semibold text-foreground">Tech Stack</h4>
+            </div>
+          </div>
+          <div className="divide-y divide-border">
+            {techStack.map((row) => (
+              <div key={row.layer} className="flex items-baseline gap-4 px-6 py-3">
+                <span className="w-36 shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {row.layer}
+                </span>
+                <span className="text-sm text-foreground">{row.tech}</span>
+              </div>
             ))}
+          </div>
+        </div>
+      </Reveal>
+
+      {/* Architecture */}
+      <Reveal direction="up">
+        <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+          <div className="mb-4 flex items-center gap-2">
+            <Code2 className="h-4 w-4 text-primary" />
+            <h4 className="font-semibold text-foreground">Architecture</h4>
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Frontend */}
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary" />
+                <span className="text-sm font-semibold text-foreground">React Frontend (Vercel)</span>
+              </div>
+              <ul className="space-y-1">
+                {["Dashboard", "Chat Interface", "Rules Manager", "Approvals Queue", "Analytics", "MCP Server Status"].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="h-1 w-1 rounded-full bg-primary" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* Backend */}
+            <div className="rounded-lg border border-border bg-muted/20 p-4">
+              <div className="mb-2 flex items-center gap-2">
+                <Database className="h-4 w-4 text-success" />
+                <span className="text-sm font-semibold text-foreground">Django Backend (Render)</span>
+              </div>
+              <ul className="space-y-1">
+                {["PolicyEngine — BLOCK / ALLOW / REQUIRE_APPROVAL", "MCPClient — JSON-RPC over STDIO", "MCP Servers (notes, filesystem)", "PostgreSQL audit log"].map((item) => (
+                  <li key={item} className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span className="h-1 w-1 rounded-full bg-success" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </Reveal>
 
       {/* Team */}
       <Reveal direction="up">
-        <div className="rounded-2xl border border-border bg-white p-8 shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/10%)]">
-          <p className="mb-6 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">The team</p>
-          <div className="flex justify-center">
-            <div className="text-center">
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-glow text-xl font-bold text-white shadow-[0_4px_20px_-4px_oklch(0.58_0.16_275/40%)]">
-                D
-              </div>
-              <h4 className="font-bold text-foreground">Divya</h4>
-              <p className="text-sm font-medium text-primary">Founder &amp; Lead Engineer</p>
-              <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
-                Built ArmorIQ end-to-end — Django backend, React frontend, MCP protocol layer, and policy engine.
-              </p>
+        <div className="rounded-xl border border-border bg-white p-8 shadow-sm text-center">
+          <p className="mb-6 text-xs font-semibold uppercase tracking-widest text-muted-foreground">The Team</p>
+          <div className="inline-block text-center">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-xl bg-primary text-xl font-bold text-primary-foreground shadow-sm">
+              D
             </div>
+            <h4 className="font-bold text-foreground">Divya</h4>
+            <p className="text-sm font-medium text-primary">Founder &amp; Lead Engineer</p>
+            <p className="mx-auto mt-2 max-w-xs text-sm text-muted-foreground">
+              Built ArmorIQ end-to-end — Django backend, React frontend, MCP protocol layer, and policy engine.
+            </p>
           </div>
         </div>
       </Reveal>
 
-      {/* Bottom CTA */}
+      {/* CTA */}
       <Reveal direction="up">
-        <div className="rounded-2xl border border-border bg-gradient-to-br from-secondary to-[oklch(0.96_0.025_300)] p-10 text-center shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/10%)]">
-          <h3 className="text-2xl font-bold tracking-tight">See it running</h3>
+        <div className="rounded-xl border border-primary/20 bg-secondary p-10 text-center shadow-sm">
+          <h3 className="text-2xl font-bold tracking-tight text-foreground">See it running</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            The live demo hits the production backend. Generate tool calls, watch the policy engine decide, and approve or reject from this dashboard.
+            The live demo hits the production backend. Generate tool calls, watch the policy engine decide,
+            and approve or reject from this dashboard.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <a
               href="https://amor-beta-livid.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-glow px-6 py-2.5 text-sm font-semibold text-white shadow-[0_2px_12px_-2px_oklch(0.58_0.16_275/40%)] transition-all hover:-translate-y-0.5"
+              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
               Open live demo <ArrowRight className="h-4 w-4" />
+            </a>
+            <a
+              href="https://github.com/IsHa2507/SentriAI"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-white px-6 py-2.5 text-sm font-semibold text-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40"
+            >
+              <GitBranch className="h-4 w-4 text-muted-foreground" />
+              View on GitHub
             </a>
           </div>
         </div>
